@@ -1,22 +1,31 @@
 import sys
 import time
+import argparse
 
 from core import ClassicalRNNDaemon as rnnDaemon
 from core import DAEMON_PID_FILE
 
-if __name__ == "__main__":
+def start(daemon):
+    daemon.start()
+
+def stop(daemon):
+    daemon.stop()
+
+def restart(daemon):
+    daemon.restart()
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description='ClassicalRNN Service')
+    parser.add_argument('--start'   , action='store_const', const=lambda daemon:start(daemon)   , dest='run')
+    parser.add_argument('--stop'    , action='store_const', const=lambda daemon:stop(daemon)    , dest='run')
+    parser.add_argument('--restart' , action='store_const', const=lambda daemon:restart(daemon) , dest='run')
+
+    return parser.parse_args()
+
+def main():
+    args = parseArgs()
     daemon = rnnDaemon(DAEMON_PID_FILE)
-    if len(sys.argv) == 2:
-        if 'start' == sys.argv[1]:
-            daemon.start()
-        elif 'stop' == sys.argv[1]:
-            daemon.stop()
-        elif 'restart' == sys.argv[1]:
-            daemon.restart()
-        else:
-            print "Unknown command"
-            sys.exit(2)
-        sys.exit(0)
-    else:
-        print "usage: %s start|stop|restart" % sys.argv[0]
-        sys.exit(2)
+    args.run(daemon)
+
+if __name__ == "__main__":
+    main()
