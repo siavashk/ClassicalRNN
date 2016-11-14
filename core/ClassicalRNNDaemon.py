@@ -7,4 +7,4 @@ class ClassicalRNNDaemon(Daemon):
         twitter = TwitterAdapter()
         while True:
             twitter.updateStatus()
-            time.sleep(1)
+            time.sleep(10)
