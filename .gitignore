@@ -1,3 +1,5 @@
 *.pyc
 config/local/env.sh
 config/local/youtube.json
+videos/*
+scripts/*-oauth2.json
