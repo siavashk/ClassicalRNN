@@ -1,2 +1,2 @@
 # ClassicalRNN
-Classical Music Bot
+Classical Music Bot (WIP)
