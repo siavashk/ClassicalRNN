@@ -4,3 +4,4 @@ config/local/youtube.json
 videos/*
 scripts/*-oauth2.json
 audios/*.mid
+audios/*.wav
