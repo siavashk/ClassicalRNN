@@ -1,5 +1,5 @@
 # ClassicalRNN
 [![Build Status](https://travis-ci.org/siavashk/ClassicalRNN.svg?branch=master)](https://travis-ci.org/siavashk/ClassicalRNN)
-[![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/hyperium/hyper/master/LICENSE)
 
 Classical Music Bot (WIP)
