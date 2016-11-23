@@ -28,80 +28,72 @@ from magenta.models.melody_rnn import melody_rnn_sequence_generator
 from magenta.protobuf import generator_pb2
 from magenta.protobuf import music_pb2
 
-def get_checkpoint():
-  return 'checkpoint_file'
+class MelodyGenerator(object):
 
-def get_bundle():
-  bundle_file = '/magenta-models/lookback_rnn.mag'
-  return magenta.music.read_bundle_file(bundle_file)
+  def get_checkpoint(self):
+    return 'checkpoint_file'
 
+  def get_bundle(self):
+    bundle_file = '/magenta-models/lookback_rnn.mag'
+    return magenta.music.read_bundle_file(bundle_file)
 
-def _steps_to_seconds(steps, qpm):
-  steps_per_quarter = 4
-  return steps * 60.0 / qpm / steps_per_quarter
-
-
-def run_with_flags(generator):
-  beam_size           = 1
-  branch_factor       = 1
-  midi_path           = '/usr/src/audio/current.mid'
-  num_steps           = 128
-  steps_per_iteration = 1
-  temperature         = 1.0
-
-  qpm = magenta.music.DEFAULT_QUARTERS_PER_MINUTE
-  primer_melody = magenta.music.Melody([60])
-  primer_sequence = primer_melody.to_sequence(qpm=qpm)
-
-  total_seconds = _steps_to_seconds(num_steps, qpm)
-
-  generator_options = generator_pb2.GeneratorOptions()
+  def steps_to_seconds(self, steps, qpm):
+    steps_per_quarter = 4
+    return steps * 60.0 / qpm / steps_per_quarter
 
 
-  input_sequence = primer_sequence
-  last_end_time = (max(n.end_time for n in primer_sequence.notes) if primer_sequence.notes else 0)
-  generate_section = generator_options.generate_sections.add( start_time=last_end_time + _steps_to_seconds(1, qpm), end_time=total_seconds)
+  def generate(self, generator):
+    beam_size           = 1
+    branch_factor       = 1
+    midi_path           = '/usr/src/audio/current.mid'
+    num_steps           = 128
+    steps_per_iteration = 1
+    temperature         = 1.0
 
-  if generate_section.start_time >= generate_section.end_time:
-    tf.logging.fatal( 'Priming sequence is longer than the total number of steps')
-    return
+    qpm = magenta.music.DEFAULT_QUARTERS_PER_MINUTE
+    primer_melody = magenta.music.Melody([60])
+    primer_sequence = primer_melody.to_sequence(qpm=qpm)
 
-  generator_options.args['temperature'].float_value = temperature
-  generator_options.args['beam_size'].int_value = beam_size
-  generator_options.args['branch_factor'].int_value = branch_factor
-  generator_options.args['steps_per_iteration'].int_value = steps_per_iteration
+    total_seconds = steps_to_seconds(num_steps, qpm)
 
-  tf.logging.debug('input_sequence: %s', input_sequence)
-  tf.logging.debug('generator_options: %s', generator_options)
+    generator_options = generator_pb2.GeneratorOptions()
 
-  generated_sequence = generator.generate(input_sequence, generator_options)
-  magenta.music.sequence_proto_to_midi_file(generated_sequence, midi_path)
+    input_sequence = primer_sequence
+    last_end_time = (max(n.end_time for n in primer_sequence.notes) if primer_sequence.notes else 0)
+    generate_section = generator_options.generate_sections.add( start_time=last_end_time + steps_to_seconds(1, qpm), end_time=total_seconds)
 
-def generate(unused_argv):
-  """Saves bundle or runs generator based on flags."""
-  tf.logging.set_verbosity(FLAGS.log)
+    if generate_section.start_time >= generate_section.end_time:
+      tf.logging.fatal( 'Priming sequence is longer than the total number of steps')
+      return
 
-  config = melody_rnn_config_flags.config_from_flags()
-  generator = melody_rnn_sequence_generator.MelodyRnnSequenceGenerator(
-      model=melody_rnn_model.MelodyRnnModel(config),
-      details=config.details,
-      steps_per_quarter=FLAGS.steps_per_quarter,
-      checkpoint=get_checkpoint(),
-      bundle=get_bundle())
+    generator_options.args['temperature'].float_value = temperature
+    generator_options.args['beam_size'].int_value = beam_size
+    generator_options.args['branch_factor'].int_value = branch_factor
+    generator_options.args['steps_per_iteration'].int_value = steps_per_iteration
 
-  if FLAGS.save_generator_bundle:
-    bundle_filename = os.path.expanduser(FLAGS.bundle_file)
-    if FLAGS.bundle_description is None:
-      tf.logging.warning('No bundle description provided.')
-    tf.logging.info('Saving generator bundle to %s', bundle_filename)
-    generator.create_bundle_file(bundle_filename, FLAGS.bundle_description)
-  else:
-    run_with_flags(generator)
+    tf.logging.debug('input_sequence: %s', input_sequence)
+    tf.logging.debug('generator_options: %s', generator_options)
 
+    generated_sequence = generator.generate(input_sequence, generator_options)
+    magenta.music.sequence_proto_to_midi_file(generated_sequence, midi_path)
 
-def console_entry_point():
-  tf.app.run(generate)
+  def getMelody(self):
+    """Saves bundle or runs generator based on flags."""
+    tf.logging.set_verbosity(FLAGS.log)
 
+    config = melody_rnn_config_flags.config_from_flags()
+    generator = melody_rnn_sequence_generator.MelodyRnnSequenceGenerator(
+        model=melody_rnn_model.MelodyRnnModel(config),
+        details=config.details,
+        steps_per_quarter=FLAGS.steps_per_quarter,
+        checkpoint=get_checkpoint(),
+        bundle=get_bundle())
 
-if __name__ == '__main__':
-  console_entry_point()
+    if FLAGS.save_generator_bundle:
+      bundle_filename = os.path.expanduser(FLAGS.bundle_file)
+      if FLAGS.bundle_description is None:
+        tf.logging.warning('No bundle description provided.')
+      tf.logging.info('Saving generator bundle to %s', bundle_filename)
+      generator.create_bundle_file(bundle_filename, FLAGS.bundle_description)
+    else:
+      generate(generator)
