@@ -17,8 +17,6 @@ import ast
 import os
 import time
 
-# internal imports
-
 import tensorflow as tf
 import magenta
 
@@ -30,9 +28,6 @@ from magenta.protobuf import music_pb2
 
 class MelodyGenerator(object):
 
-  def get_checkpoint(self):
-    return 'checkpoint_file'
-
   def get_bundle(self):
     bundle_file = '/magenta-models/lookback_rnn.mag'
     return magenta.music.read_bundle_file(bundle_file)
@@ -40,7 +35,6 @@ class MelodyGenerator(object):
   def steps_to_seconds(self, steps, qpm):
     steps_per_quarter = 4
     return steps * 60.0 / qpm / steps_per_quarter
-
 
   def generate(self, generator):
     beam_size           = 1
@@ -71,29 +65,14 @@ class MelodyGenerator(object):
     generator_options.args['branch_factor'].int_value = branch_factor
     generator_options.args['steps_per_iteration'].int_value = steps_per_iteration
 
-    tf.logging.debug('input_sequence: %s', input_sequence)
-    tf.logging.debug('generator_options: %s', generator_options)
-
     generated_sequence = generator.generate(input_sequence, generator_options)
     magenta.music.sequence_proto_to_midi_file(generated_sequence, midi_path)
 
   def getMelody(self):
-    """Saves bundle or runs generator based on flags."""
-    tf.logging.set_verbosity(FLAGS.log)
-
     config = melody_rnn_config_flags.config_from_flags()
     generator = melody_rnn_sequence_generator.MelodyRnnSequenceGenerator(
-        model=melody_rnn_model.MelodyRnnModel(config),
-        details=config.details,
-        steps_per_quarter=FLAGS.steps_per_quarter,
-        checkpoint=get_checkpoint(),
-        bundle=get_bundle())
-
-    if FLAGS.save_generator_bundle:
-      bundle_filename = os.path.expanduser(FLAGS.bundle_file)
-      if FLAGS.bundle_description is None:
-        tf.logging.warning('No bundle description provided.')
-      tf.logging.info('Saving generator bundle to %s', bundle_filename)
-      generator.create_bundle_file(bundle_filename, FLAGS.bundle_description)
-    else:
-      generate(generator)
+      model=melody_rnn_model.MelodyRnnModel(config),
+      details=config.details,
+      checkpoint=get_checkpoint(),
+      bundle=get_bundle())
+    generate(generator)
